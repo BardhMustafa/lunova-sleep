@@ -29,7 +29,7 @@ everything from `/admin`.
 
 - **Next.js 14** (App Router) + **TypeScript**
 - **Tailwind CSS** for styling
-- **Prisma** + **SQLite** (swap for Postgres in production)
+- **Prisma** + **Postgres** (via **Supabase**)
 - Server Actions for admin mutations, a small REST route for order placement
 
 ---
@@ -57,12 +57,13 @@ npm run dev
 
 ## 🔑 Environment variables
 
-| Variable             | Purpose                                            |
-| -------------------- | -------------------------------------------------- |
-| `DATABASE_URL`       | Database connection (SQLite file by default)       |
-| `ADMIN_PASSWORD`     | Password for the `/admin` dashboard                |
-| `SESSION_SECRET`     | Secret used to sign the admin session cookie       |
-| `STORE_CONTACT_EMAIL`| Your orders contact address                        |
+| Variable             | Purpose                                                    |
+| -------------------- | ---------------------------------------------------------- |
+| `DATABASE_URL`       | Supabase **pooled** connection (port 6543) — used at runtime |
+| `DIRECT_URL`         | Supabase **direct** connection (port 5432) — used by `db push` |
+| `ADMIN_PASSWORD`     | Password for the `/admin` dashboard                        |
+| `SESSION_SECRET`     | Secret used to sign the admin session cookie               |
+| `STORE_CONTACT_EMAIL`| Your orders contact address                               |
 
 ---
 
@@ -100,14 +101,23 @@ prisma/               # schema + seed (the 5 starter beds)
 public/products/      # product images (placeholders included)
 ```
 
-## ☁️ Deploying to production
+## ☁️ Database setup (Supabase)
 
-SQLite is great for local/dev. For a serverless host (e.g. Vercel) use a
-hosted Postgres database:
-
-1. In `prisma/schema.prisma`, set `provider = "postgresql"`.
-2. Set `DATABASE_URL` to your Postgres connection string.
-3. Run `npx prisma db push` and `npm run db:seed` against it.
-4. Set `ADMIN_PASSWORD` and a strong `SESSION_SECRET` in your host's env.
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Go to **Project → Settings → Database → Connection string** and copy:
+   - the **pooled** string (Transaction mode, port **6543**) → `DATABASE_URL`
+   - the **direct** string (port **5432**) → `DIRECT_URL`
+   - (add `?pgbouncer=true` to the pooled URL if it isn't already there)
+3. Put both in your `.env` (and in your host's env vars for production).
+4. Create the tables and seed the starter beds:
+   ```bash
+   npm run db:push
+   npm run db:seed
+   ```
 
 `npm run build` runs `prisma generate` automatically.
+
+### Deploying (e.g. Vercel)
+
+Set these env vars in your host: `DATABASE_URL`, `DIRECT_URL`,
+`ADMIN_PASSWORD`, and a strong `SESSION_SECRET`. That's it.
