@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { parseProduct } from "@/lib/types";
+import { getProductById } from "@/lib/products";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { ProductForm } from "@/components/admin/product-form";
 import { updateProduct } from "../../actions";
@@ -13,10 +12,9 @@ export default async function EditProductPage({
 }: {
   params: { id: string };
 }) {
-  requireAuth();
-  const row = await prisma.product.findUnique({ where: { id: params.id } });
-  if (!row) notFound();
-  const product = parseProduct(row);
+  await requireAuth();
+  const product = await getProductById(params.id);
+  if (!product) notFound();
 
   return (
     <AdminShell active="products">

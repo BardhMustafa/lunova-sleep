@@ -20,17 +20,22 @@ everything from `/admin`.
 - Order confirmation with an order number
 
 **Admin dashboard** (`/admin`)
-- Password-protected (signed session cookie)
+- Protected by **Supabase Auth** (email + password)
 - Orders view: customer details, line items, totals, live status (Pending → Confirmed → Delivered → Cancelled)
-- Product management: create / edit / hide / delete, set prices per size, mark featured, reorder, manage images
+- Product management: create / edit / hide / delete, set prices per size, mark featured, reorder
+- **Photo uploads** straight to Supabase Storage
 - At-a-glance stats (orders, pending, delivered, revenue)
 
 ## 🧱 Tech stack
 
 - **Next.js 14** (App Router) + **TypeScript**
 - **Tailwind CSS** for styling
-- **Prisma** + **Postgres** (via **Supabase**)
-- Server Actions for admin mutations, a small REST route for order placement
+- **Supabase** — Postgres database, Auth, and Storage (via `@supabase/supabase-js` + `@supabase/ssr`)
+- Server Actions for admin mutations, a REST route for order placement
+
+All database access happens **server-side** using the Supabase **service-role**
+key. Row Level Security is enabled with no public policies, so the public
+(anon) key can never read or write your data directly.
 
 ---
 
@@ -40,45 +45,51 @@ everything from `/admin`.
 # 1. Install dependencies
 npm install
 
-# 2. Set up your environment
+# 2. Set up Supabase (see "Supabase setup" below), then:
 cp .env.example .env
-#   then edit .env — at minimum change ADMIN_PASSWORD and SESSION_SECRET
+#   fill in the three Supabase values
 
-# 3. Create the database and seed the 5 starter beds
-npm run db:push
-npm run db:seed
-
-# 4. Run it
+# 3. Run it
 npm run dev
 ```
 
 - Storefront: http://localhost:3000
-- Admin: http://localhost:3000/admin  (default password: `lunova-admin` — change it!)
+- Admin: http://localhost:3000/admin
 
-## 🔑 Environment variables
+## ☁️ Supabase setup
 
-| Variable             | Purpose                                                    |
-| -------------------- | ---------------------------------------------------------- |
-| `DATABASE_URL`       | Supabase **pooled** connection (port 6543) — used at runtime |
-| `DIRECT_URL`         | Supabase **direct** connection (port 5432) — used by `db push` |
-| `ADMIN_PASSWORD`     | Password for the `/admin` dashboard                        |
-| `SESSION_SECRET`     | Secret used to sign the admin session cookie               |
-| `STORE_CONTACT_EMAIL`| Your orders contact address                               |
+1. **Create a project** at [supabase.com](https://supabase.com) (free tier is fine).
 
----
+2. **Create the tables, security, storage bucket and seed data.**
+   Open **SQL Editor → New query**, paste the contents of
+   [`supabase/schema.sql`](./supabase/schema.sql), and run it.
 
-## 🖼 Replacing the placeholder photos
+3. **Get your keys** from **Project → Settings → API** and put them in `.env`:
+
+   | Variable                         | Where to find it                          | Notes                          |
+   | -------------------------------- | ----------------------------------------- | ------------------------------ |
+   | `NEXT_PUBLIC_SUPABASE_URL`       | Settings → API → Project URL              | Public                         |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY`  | Settings → API → anon / publishable key   | Public (safe in the browser)   |
+   | `SUPABASE_SERVICE_ROLE_KEY`      | Settings → API → service_role / secret key| **Secret — server only!**      |
+
+   ⚠️ Never commit the service-role key or expose it in the browser.
+
+4. **Create your admin user.** Go to **Authentication → Users → Add user**,
+   enter your email + a password, and (easiest) tick *Auto Confirm User*.
+   That email/password is what you'll use to sign in at `/admin`.
+
+That's it — `npm run dev` and sign in.
+
+## 🖼 Product photos
 
 The site ships with elegant generated SVG placeholders (one per bed) in
-`public/products/` so nothing looks broken out of the box.
+`public/products/`, so nothing looks broken out of the box.
 
-To use the real product photos:
-
-1. Drop your images into `public/products/` (e.g. `lunova-horizontal.jpg`).
-2. In **Admin → Products → Edit**, set the **Image paths** field, one per line,
-   e.g. `/products/lunova-horizontal.jpg`.
-
-(Multiple lines = multiple gallery images on the product page.)
+To use real photos, two options:
+- **Upload in the dashboard** — Admin → Products → Edit → *Upload photos*.
+  Files go to Supabase Storage and the public URL is saved automatically.
+- **Reference a path/URL** — add any image path or URL in the *Image URLs*
+  box (one per line). Local files in `public/products/` work too.
 
 ## 💶 Prices, sizes & products
 
@@ -96,28 +107,19 @@ app/
   admin/              # protected dashboard + server actions
   api/orders/         # order placement endpoint
 components/           # UI: navbar, cart, product cards, admin widgets
-lib/                  # db client, auth, formatting, product/order helpers
-prisma/               # schema + seed (the 5 starter beds)
-public/products/      # product images (placeholders included)
+lib/
+  supabase/           # server (auth), admin (service-role), middleware clients
+  auth, products,     # data + auth helpers
+  orders, types
+supabase/schema.sql   # tables, RLS, storage bucket, seed data
+public/products/      # placeholder bed images
+middleware.ts         # refreshes the Supabase auth session
 ```
 
-## ☁️ Database setup (Supabase)
+## 🚢 Deploying (e.g. Vercel)
 
-1. Create a free project at [supabase.com](https://supabase.com).
-2. Go to **Project → Settings → Database → Connection string** and copy:
-   - the **pooled** string (Transaction mode, port **6543**) → `DATABASE_URL`
-   - the **direct** string (port **5432**) → `DIRECT_URL`
-   - (add `?pgbouncer=true` to the pooled URL if it isn't already there)
-3. Put both in your `.env` (and in your host's env vars for production).
-4. Create the tables and seed the starter beds:
-   ```bash
-   npm run db:push
-   npm run db:seed
-   ```
-
-`npm run build` runs `prisma generate` automatically.
-
-### Deploying (e.g. Vercel)
-
-Set these env vars in your host: `DATABASE_URL`, `DIRECT_URL`,
-`ADMIN_PASSWORD`, and a strong `SESSION_SECRET`. That's it.
+1. Push the repo and import it in Vercel.
+2. Add the three env vars (`NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+3. Deploy. The same Supabase project powers production — your orders,
+   products and uploaded photos all persist.

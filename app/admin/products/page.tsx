@@ -8,7 +8,7 @@ import { deleteProduct, toggleProductActive } from "../actions";
 export const dynamic = "force-dynamic";
 
 export default async function AdminProductsPage() {
-  requireAuth();
+  await requireAuth();
   const products = await getAllProducts();
 
   return (

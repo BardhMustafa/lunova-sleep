@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
-import { parseProduct, type OrderItem } from "@/lib/types";
+import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { parseProduct, type ProductRow, type OrderItem } from "@/lib/types";
 import { uniqueOrderNumber } from "@/lib/orders";
 
 const schema = z.object({
@@ -39,13 +39,25 @@ export async function POST(req: Request) {
   }
 
   const data = parsed.data;
+  const supabase = createSupabaseAdmin();
 
   // Rebuild line items from the database — never trust client prices.
   const productIds = [...new Set(data.items.map((i) => i.productId))];
-  const products = await prisma.product.findMany({
-    where: { id: { in: productIds }, active: true },
-  });
-  const byId = new Map(products.map((p) => [p.id, parseProduct(p)]));
+  const { data: rows, error } = await supabase
+    .from("products")
+    .select("*")
+    .in("id", productIds)
+    .eq("active", true);
+  if (error) {
+    return NextResponse.json(
+      { error: "Could not verify products. Please try again." },
+      { status: 500 }
+    );
+  }
+
+  const byId = new Map(
+    (rows as ProductRow[]).map((p) => [p.id, parseProduct(p)])
+  );
 
   const items: OrderItem[] = [];
   let total = 0;
@@ -77,22 +89,27 @@ export async function POST(req: Request) {
 
   const orderNumber = await uniqueOrderNumber();
 
-  await prisma.order.create({
-    data: {
-      orderNumber,
-      customerName: data.customerName,
-      email: data.email,
-      phone: data.phone,
-      address: data.address,
-      city: data.city,
-      postalCode: data.postalCode,
-      country: data.country,
-      notes: data.notes,
-      items: JSON.stringify(items),
-      total,
-      status: "PENDING",
-    },
+  const { error: insertError } = await supabase.from("orders").insert({
+    order_number: orderNumber,
+    customer_name: data.customerName,
+    email: data.email,
+    phone: data.phone,
+    address: data.address,
+    city: data.city,
+    postal_code: data.postalCode,
+    country: data.country,
+    notes: data.notes,
+    items,
+    total,
+    status: "PENDING",
   });
+
+  if (insertError) {
+    return NextResponse.json(
+      { error: "Could not place the order. Please try again." },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({ orderNumber, total });
 }

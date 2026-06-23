@@ -1,6 +1,6 @@
 import { requireAuth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { parseOrder } from "@/lib/types";
+import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { parseOrder, type OrderRow } from "@/lib/types";
 import { formatPrice, formatDate } from "@/lib/format";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { OrderStatusSelect } from "@/components/admin/order-status-select";
@@ -9,10 +9,14 @@ import { deleteOrder } from "./actions";
 export const dynamic = "force-dynamic";
 
 export default async function AdminOrdersPage() {
-  requireAuth();
+  await requireAuth();
 
-  const rows = await prisma.order.findMany({ orderBy: { createdAt: "desc" } });
-  const orders = rows.map(parseOrder);
+  const supabase = createSupabaseAdmin();
+  const { data } = await supabase
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+  const orders = ((data as OrderRow[]) ?? []).map(parseOrder);
 
   const revenue = orders
     .filter((o) => o.status !== "CANCELLED")

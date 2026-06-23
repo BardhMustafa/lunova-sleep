@@ -1,4 +1,4 @@
-import { prisma } from "./db";
+import { createSupabaseAdmin } from "./supabase/admin";
 
 /** Human-friendly order number like LUN-7F3K9. */
 export function generateOrderNumber(): string {
@@ -11,11 +11,15 @@ export function generateOrderNumber(): string {
 }
 
 export async function uniqueOrderNumber(): Promise<string> {
+  const supabase = createSupabaseAdmin();
   for (let i = 0; i < 6; i++) {
     const n = generateOrderNumber();
-    const existing = await prisma.order.findUnique({ where: { orderNumber: n } });
-    if (!existing) return n;
+    const { data } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("order_number", n)
+      .maybeSingle();
+    if (!data) return n;
   }
-  // Fallback with timestamp suffix
   return `LUN-${Date.now().toString(36).toUpperCase()}`;
 }

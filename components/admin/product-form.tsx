@@ -119,16 +119,42 @@ export function ProductForm({ action, product }: Props) {
           />
         )}
         <div className="sm:col-span-2">
+          {product && product.images.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {product.images.map((img, i) => (
+                <div
+                  key={i}
+                  className="h-16 w-20 overflow-hidden rounded-lg border border-ink/10 bg-sand-200"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img} alt="" className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          )}
           {field(
-            "Image paths",
+            "Upload photos",
+            <input
+              type="file"
+              name="imageFiles"
+              accept="image/*"
+              multiple
+              className="block w-full text-sm text-ink-soft file:mr-4 file:rounded-full file:border-0 file:bg-ink file:px-4 file:py-2 file:text-sm file:text-sand-50 hover:file:bg-sage-600"
+            />,
+            "Upload to Supabase Storage. New uploads are added to the images below."
+          )}
+        </div>
+        <div className="sm:col-span-2">
+          {field(
+            "Image URLs / paths",
             <textarea
               name="images"
               defaultValue={product?.images.join("\n")}
               rows={3}
-              placeholder="/products/lunova-horizontal.svg"
+              placeholder="https://...supabase.co/storage/v1/object/public/product-images/..."
               className={`${inputCls} resize-none font-mono text-sm`}
             />,
-            "One path per line. Drop photos in /public/products and reference them here."
+            "One per line. Keep existing ones here; uploaded photos are appended automatically. Edit to remove."
           )}
         </div>
       </section>

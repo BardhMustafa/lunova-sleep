@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 import { isAuthenticated } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 
-export default function AdminLoginPage() {
-  if (isAuthenticated()) redirect("/admin");
+export const dynamic = "force-dynamic";
+
+export default async function AdminLoginPage() {
+  if (await isAuthenticated()) redirect("/admin");
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6">

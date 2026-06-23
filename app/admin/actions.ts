@@ -2,50 +2,55 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/db";
-import {
-  checkPassword,
-  createSession,
-  destroySession,
-  isAuthenticated,
-} from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdmin, PRODUCT_BUCKET } from "@/lib/supabase/admin";
+import { getCurrentUser } from "@/lib/auth";
 import { ORDER_STATUSES, type Size } from "@/lib/types";
 
-function ensureAuth() {
-  if (!isAuthenticated()) throw new Error("Unauthorized");
+async function ensureAuth() {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
 }
 
 // ───────────── Auth ─────────────
 
 export async function loginAction(_prev: unknown, formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  if (!checkPassword(password)) {
-    return { error: "Incorrect password. Please try again." };
+  if (!email || !password) {
+    return { error: "Please enter your email and password." };
   }
-  createSession();
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    return { error: "Incorrect email or password. Please try again." };
+  }
   redirect("/admin");
 }
 
 export async function logoutAction() {
-  destroySession();
+  const supabase = createSupabaseServerClient();
+  await supabase.auth.signOut();
   redirect("/admin/login");
 }
 
 // ───────────── Orders ─────────────
 
 export async function updateOrderStatus(formData: FormData) {
-  ensureAuth();
+  await ensureAuth();
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
   if (!ORDER_STATUSES.includes(status as never)) return;
-  await prisma.order.update({ where: { id }, data: { status } });
+  const supabase = createSupabaseAdmin();
+  await supabase.from("orders").update({ status }).eq("id", id);
   revalidatePath("/admin");
 }
 
 export async function deleteOrder(formData: FormData) {
-  ensureAuth();
+  await ensureAuth();
   const id = String(formData.get("id") ?? "");
-  await prisma.order.delete({ where: { id } });
+  const supabase = createSupabaseAdmin();
+  await supabase.from("orders").delete().eq("id", id);
   revalidatePath("/admin");
 }
 
@@ -64,63 +69,107 @@ function parseSizesFromForm(formData: FormData): Size[] {
   return sizes;
 }
 
-function buildProductData(formData: FormData) {
-  const images = String(formData.get("images") ?? "")
+/** Uploads any attached image files to Supabase Storage, returns public URLs. */
+async function uploadImages(formData: FormData, slug: string): Promise<string[]> {
+  const files = formData
+    .getAll("imageFiles")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length === 0) return [];
+
+  const supabase = createSupabaseAdmin();
+  const urls: string[] = [];
+  for (const file of files) {
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `${slug || "product"}/${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}.${ext}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const { error } = await supabase.storage
+      .from(PRODUCT_BUCKET)
+      .upload(path, buffer, {
+        contentType: file.type || "image/jpeg",
+        upsert: false,
+      });
+    if (error) throw new Error(`Image upload failed: ${error.message}`);
+    const { data } = supabase.storage.from(PRODUCT_BUCKET).getPublicUrl(path);
+    urls.push(data.publicUrl);
+  }
+  return urls;
+}
+
+async function buildProductData(formData: FormData) {
+  const slug = String(formData.get("slug") ?? "").trim();
+  const manualImages = String(formData.get("images") ?? "")
     .split("\n")
     .map((s) => s.trim())
     .filter(Boolean);
+  const uploaded = await uploadImages(formData, slug);
+  const images = [...manualImages, ...uploaded];
 
   return {
-    slug: String(formData.get("slug") ?? "").trim(),
+    slug,
     name: String(formData.get("name") ?? "").trim(),
     tagline: String(formData.get("tagline") ?? "").trim(),
     description: String(formData.get("description") ?? "").trim(),
     material: String(formData.get("material") ?? "").trim(),
-    colorName: String(formData.get("colorName") ?? "").trim(),
-    colorHex: String(formData.get("colorHex") ?? "#999999").trim(),
-    images: JSON.stringify(images),
-    sizes: JSON.stringify(parseSizesFromForm(formData)),
+    color_name: String(formData.get("colorName") ?? "").trim(),
+    color_hex: String(formData.get("colorHex") ?? "#999999").trim(),
+    images,
+    sizes: parseSizesFromForm(formData),
     featured: formData.get("featured") === "on",
     active: formData.get("active") === "on",
-    sortOrder: parseInt(String(formData.get("sortOrder") ?? "0"), 10) || 0,
+    sort_order: parseInt(String(formData.get("sortOrder") ?? "0"), 10) || 0,
   };
 }
 
 export async function createProduct(formData: FormData) {
-  ensureAuth();
-  const data = buildProductData(formData);
+  await ensureAuth();
+  const data = await buildProductData(formData);
   if (!data.slug || !data.name) {
     throw new Error("Name and slug are required");
   }
-  await prisma.product.create({ data });
+  const supabase = createSupabaseAdmin();
+  const { error } = await supabase.from("products").insert(data);
+  if (error) throw new Error(error.message);
   revalidatePath("/admin/products");
   redirect("/admin/products");
 }
 
 export async function updateProduct(formData: FormData) {
-  ensureAuth();
+  await ensureAuth();
   const id = String(formData.get("id") ?? "");
-  const data = buildProductData(formData);
-  await prisma.product.update({ where: { id }, data });
+  const data = await buildProductData(formData);
+  const supabase = createSupabaseAdmin();
+  const { error } = await supabase
+    .from("products")
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath("/admin/products");
   redirect("/admin/products");
 }
 
 export async function deleteProduct(formData: FormData) {
-  ensureAuth();
+  await ensureAuth();
   const id = String(formData.get("id") ?? "");
-  await prisma.product.delete({ where: { id } });
+  const supabase = createSupabaseAdmin();
+  await supabase.from("products").delete().eq("id", id);
   revalidatePath("/admin/products");
 }
 
 export async function toggleProductActive(formData: FormData) {
-  ensureAuth();
+  await ensureAuth();
   const id = String(formData.get("id") ?? "");
-  const product = await prisma.product.findUnique({ where: { id } });
-  if (!product) return;
-  await prisma.product.update({
-    where: { id },
-    data: { active: !product.active },
-  });
+  const supabase = createSupabaseAdmin();
+  const { data } = await supabase
+    .from("products")
+    .select("active")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data) return;
+  await supabase
+    .from("products")
+    .update({ active: !data.active })
+    .eq("id", id);
   revalidatePath("/admin/products");
 }
