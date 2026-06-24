@@ -91,6 +91,14 @@ To use real photos, two options:
 - **Reference a path/URL** — add any image path or URL in the *Image URLs*
   box (one per line). Local files in `public/products/` work too.
 
+## 🌍 Languages
+
+The storefront is bilingual — **Albanian (default)** and **English** — with a
+`SQ / EN` switcher in the nav. The choice is stored in a cookie and rendered
+server-side. UI copy lives in [`lib/i18n/dictionaries.ts`](./lib/i18n/dictionaries.ts);
+product names/descriptions show as entered in the admin. (The admin dashboard
+itself is English.)
+
 ## 💶 Prices, sizes & products
 
 All pricing is **placeholder** and fully editable from **Admin → Products**.

@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { getDictionary } from "@/lib/i18n/server";
 
 export function Footer() {
+  const dict = getDictionary();
   return (
     <footer id="contact" className="border-t border-ink/10 bg-sand-100">
       <div className="container-x grid gap-12 py-16 md:grid-cols-[1.5fr_1fr_1fr]">
@@ -14,44 +16,43 @@ export function Footer() {
             </span>
           </div>
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-ink-muted">
-            Simple, good-looking beds for real life — designed for the kind of
-            rest you feel the next morning.
+            {dict.footer.tagline}
           </p>
         </div>
 
         <div>
-          <h4 className="eyebrow mb-4">Explore</h4>
+          <h4 className="eyebrow mb-4">{dict.footer.explore}</h4>
           <ul className="space-y-3 text-sm text-ink-soft">
             <li>
               <Link href="/collection" className="hover:text-sage-600">
-                The collection
+                {dict.footer.collection}
               </Link>
             </li>
             <li>
               <Link href="/#story" className="hover:text-sage-600">
-                Our story
+                {dict.footer.story}
               </Link>
             </li>
             <li>
               <Link href="/#sizes" className="hover:text-sage-600">
-                Sizes & fit
+                {dict.footer.sizesFit}
               </Link>
             </li>
           </ul>
         </div>
 
         <div>
-          <h4 className="eyebrow mb-4">Get in touch</h4>
+          <h4 className="eyebrow mb-4">{dict.footer.getInTouch}</h4>
           <ul className="space-y-3 text-sm text-ink-soft">
             <li>
               <a href="mailto:hello@lunovasleep.com" className="hover:text-sage-600">
                 hello@lunovasleep.com
               </a>
             </li>
-            <li>Pay on delivery, everywhere we ship.</li>
+            <li>{dict.footer.payLine}</li>
             <li>
               <Link href="/admin" className="text-ink-muted hover:text-sage-600">
-                Store login
+                {dict.footer.storeLogin}
               </Link>
             </li>
           </ul>
@@ -60,8 +61,8 @@ export function Footer() {
 
       <div className="border-t border-ink/10">
         <div className="container-x flex flex-col items-center justify-between gap-2 py-6 text-xs text-ink-muted md:flex-row">
-          <p>© {new Date().getFullYear()} Lunova Sleep. All rights reserved.</p>
-          <p>Made for good mornings.</p>
+          <p>© {new Date().getFullYear()} Lunova Sleep. {dict.footer.rights}</p>
+          <p>{dict.footer.madeFor}</p>
         </div>
       </div>
     </footer>

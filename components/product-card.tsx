@@ -1,8 +1,10 @@
 import Link from "next/link";
 import type { ProductView } from "@/lib/types";
 import { formatPrice } from "@/lib/format";
+import { getDictionary } from "@/lib/i18n/server";
 
 export function ProductCard({ product }: { product: ProductView }) {
+  const dict = getDictionary();
   const from = product.sizes.length
     ? Math.min(...product.sizes.map((s) => s.price))
     : 0;
@@ -46,12 +48,12 @@ export function ProductCard({ product }: { product: ProductView }) {
       <div className="mt-5 flex items-baseline justify-between gap-4">
         <h3 className="font-serif text-xl text-ink">{product.name}</h3>
         <span className="whitespace-nowrap text-sm text-ink-muted">
-          from {formatPrice(from)}
+          {dict.collection.from} {formatPrice(from)}
         </span>
       </div>
       <p className="mt-1 text-sm text-ink-muted">{product.tagline}</p>
       <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-sage-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        View bed →
+        {dict.collection.viewBed}
       </span>
     </Link>
   );

@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "./cart-context";
+import { useI18n } from "./i18n-provider";
+import { LanguageSwitcher } from "./language-switcher";
 import { CartIcon } from "./icons";
 
 export function Navbar() {
   const { count, open } = useCart();
+  const { dict } = useI18n();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -36,31 +39,34 @@ export function Navbar() {
 
         <div className="hidden items-center gap-9 text-sm text-ink-soft md:flex">
           <Link href="/collection" className="transition-colors hover:text-sage-600">
-            Collection
+            {dict.nav.collection}
           </Link>
           <Link href="/#story" className="transition-colors hover:text-sage-600">
-            Our story
+            {dict.nav.story}
           </Link>
           <Link href="/#sizes" className="transition-colors hover:text-sage-600">
-            Sizes
+            {dict.nav.sizes}
           </Link>
           <Link href="/#contact" className="transition-colors hover:text-sage-600">
-            Contact
+            {dict.nav.contact}
           </Link>
         </div>
 
-        <button
-          onClick={open}
-          aria-label="Open cart"
-          className="relative flex h-10 w-10 items-center justify-center rounded-full text-ink transition-colors hover:bg-ink/5"
-        >
-          <CartIcon className="h-5 w-5" />
-          {count > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-sage-600 text-[10px] font-semibold text-white">
-              {count}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <button
+            onClick={open}
+            aria-label="Open cart"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full text-ink transition-colors hover:bg-ink/5"
+          >
+            <CartIcon className="h-5 w-5" />
+            {count > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-sage-600 text-[10px] font-semibold text-white">
+                {count}
+              </span>
+            )}
+          </button>
+        </div>
       </nav>
     </header>
   );

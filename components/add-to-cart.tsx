@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useCart } from "./cart-context";
+import { useI18n } from "./i18n-provider";
 import { formatPrice } from "@/lib/format";
 import type { ProductView } from "@/lib/types";
 import { MinusIcon, PlusIcon, CartIcon } from "./icons";
 
 export function AddToCart({ product }: { product: ProductView }) {
   const { add } = useCart();
+  const { dict } = useI18n();
   const [sizeIdx, setSizeIdx] = useState(0);
   const [qty, setQty] = useState(1);
 
@@ -18,8 +20,8 @@ export function AddToCart({ product }: { product: ProductView }) {
     <div className="space-y-7">
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <span className="eyebrow">Choose your size</span>
-          <span className="text-xs text-ink-muted">cm · W × L</span>
+          <span className="eyebrow">{dict.product.chooseSize}</span>
+          <span className="text-xs text-ink-muted">{dict.product.sizeHint}</span>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {product.sizes.map((s, i) => {
@@ -79,13 +81,11 @@ export function AddToCart({ product }: { product: ProductView }) {
           className="btn-primary flex-1"
         >
           <CartIcon className="h-5 w-5" />
-          Add to cart · {formatPrice(size.price * qty)}
+          {dict.product.addToCart} · {formatPrice(size.price * qty)}
         </button>
       </div>
 
-      <p className="text-xs text-ink-muted">
-        No payment now — you pay on delivery. Free shipping, taxes included.
-      </p>
+      <p className="text-xs text-ink-muted">{dict.product.payNote}</p>
     </div>
   );
 }

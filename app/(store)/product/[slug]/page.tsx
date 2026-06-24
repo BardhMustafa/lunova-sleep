@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getActiveProducts, getProductBySlug } from "@/lib/products";
+import { getDictionary } from "@/lib/i18n/server";
 import { AddToCart } from "@/components/add-to-cart";
 import { ProductCard } from "@/components/product-card";
 import { CheckIcon, LeafIcon, TruckIcon, ShieldIcon } from "@/components/icons";
@@ -24,6 +25,7 @@ export default async function ProductPage({
 }: {
   params: { slug: string };
 }) {
+  const dict = getDictionary();
   const product = await getProductBySlug(params.slug);
   if (!product || !product.active) notFound();
 
@@ -35,7 +37,7 @@ export default async function ProductPage({
     <div className="container-x py-10 md:py-16">
       <nav className="mb-8 text-sm text-ink-muted">
         <Link href="/collection" className="hover:text-sage-600">
-          Collection
+          {dict.nav.collection}
         </Link>
         <span className="mx-2">/</span>
         <span className="text-ink">{product.name}</span>
@@ -93,16 +95,13 @@ export default async function ProductPage({
               <LeafIcon className="h-5 w-5 text-sage-600" /> {product.material}
             </p>
             <p className="flex items-center gap-3">
-              <TruckIcon className="h-5 w-5 text-sage-600" /> Free delivery to your
-              door
+              <TruckIcon className="h-5 w-5 text-sage-600" /> {dict.product.freeDelivery}
             </p>
             <p className="flex items-center gap-3">
-              <ShieldIcon className="h-5 w-5 text-sage-600" /> Pay on delivery — no
-              card needed
+              <ShieldIcon className="h-5 w-5 text-sage-600" /> {dict.product.payOnDelivery}
             </p>
             <p className="flex items-center gap-3">
-              <CheckIcon className="h-5 w-5 text-sage-600" /> 100-night comfort
-              promise
+              <CheckIcon className="h-5 w-5 text-sage-600" /> {dict.product.comfortPromise}
             </p>
           </div>
         </div>
@@ -111,7 +110,7 @@ export default async function ProductPage({
       {others.length > 0 && (
         <section className="mt-24">
           <h2 className="font-serif text-3xl font-light text-ink">
-            You might also rest well on
+            {dict.product.alsoRest}
           </h2>
           <div className="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {others.map((p) => (

@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useCart } from "./cart-context";
+import { useI18n } from "./i18n-provider";
 import { formatPrice } from "@/lib/format";
 import { CloseIcon, MinusIcon, PlusIcon, ArrowRight } from "./icons";
 
 export function CartDrawer() {
   const { items, isOpen, close, total, setQty, remove, count } = useCart();
+  const { dict } = useI18n();
 
   return (
     <>
@@ -27,7 +29,7 @@ export function CartDrawer() {
       >
         <div className="flex items-center justify-between border-b border-ink/10 px-6 py-5">
           <h2 className="font-serif text-lg text-ink">
-            Your cart{count > 0 ? ` · ${count}` : ""}
+            {dict.cart.title}{count > 0 ? ` · ${count}` : ""}
           </h2>
           <button
             onClick={close}
@@ -40,12 +42,12 @@ export function CartDrawer() {
 
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-            <p className="font-serif text-2xl text-ink">Your cart is quiet.</p>
+            <p className="font-serif text-2xl text-ink">{dict.cart.empty}</p>
             <p className="max-w-xs text-sm text-ink-muted">
-              Add a bed you love and it will rest here until you’re ready.
+              {dict.cart.emptyText}
             </p>
             <button onClick={close} className="btn-ghost mt-2">
-              Browse the collection
+              {dict.cart.browse}
             </button>
           </div>
         ) : (
@@ -80,7 +82,7 @@ export function CartDrawer() {
                           onClick={() => remove(item.productId, item.size)}
                           className="text-xs text-ink-muted underline-offset-2 hover:text-ink hover:underline"
                         >
-                          Remove
+                          {dict.cart.remove}
                         </button>
                       </div>
                       <div className="mt-auto flex items-center justify-between">
@@ -117,20 +119,18 @@ export function CartDrawer() {
 
             <div className="border-t border-ink/10 px-6 py-5">
               <div className="flex items-center justify-between text-sm text-ink-muted">
-                <span>Subtotal</span>
+                <span>{dict.cart.subtotal}</span>
                 <span className="text-base font-medium text-ink">
                   {formatPrice(total)}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-ink-muted">
-                Pay on delivery · free shipping · taxes included
-              </p>
+              <p className="mt-1 text-xs text-ink-muted">{dict.cart.payNote}</p>
               <Link
                 href="/checkout"
                 onClick={close}
                 className="btn-primary mt-4 w-full"
               >
-                Place your order <ArrowRight className="h-4 w-4" />
+                {dict.cart.placeOrder} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </>

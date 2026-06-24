@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
+import { getLocale } from "@/lib/i18n/server";
 import "./globals.css";
 
 const display = Fraunces({
@@ -37,8 +38,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const locale = getLocale();
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang={locale} className={`${display.variable} ${body.variable}`}>
       <body className="font-sans">{children}</body>
     </html>
   );

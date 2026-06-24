@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getActiveProducts } from "@/lib/products";
+import { getDictionary } from "@/lib/i18n/server";
 import { ProductCard } from "@/components/product-card";
 import { Reveal } from "@/components/reveal";
 
@@ -11,18 +12,18 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CollectionPage() {
+  const dict = getDictionary();
   const products = await getActiveProducts();
 
   return (
     <div className="container-x py-16 md:py-24">
       <header className="max-w-2xl">
-        <span className="eyebrow">The collection</span>
+        <span className="eyebrow">{dict.collection.eyebrow}</span>
         <h1 className="mt-4 font-serif text-5xl font-light text-ink md:text-6xl">
-          Five beds, made simple.
+          {dict.collection.pageTitle}
         </h1>
         <p className="mt-5 text-lg text-ink-soft">
-          Each Lunova model comes in four sizes and is paid for on delivery.
-          Quietly beautiful, honestly priced.
+          {dict.collection.pageSubtitle}
         </p>
       </header>
 
@@ -36,7 +37,7 @@ export default async function CollectionPage() {
 
       {products.length === 0 && (
         <p className="mt-16 text-center text-ink-muted">
-          No beds available right now. Please check back soon.
+          {dict.collection.empty}
         </p>
       )}
     </div>
