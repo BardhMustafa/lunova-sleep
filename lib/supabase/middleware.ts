@@ -1,10 +1,11 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./env";
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const URL = SUPABASE_URL;
+const ANON = SUPABASE_ANON_KEY;
 
 /** Refreshes the Supabase auth session cookie on each request. */
 export async function updateSession(request: NextRequest) {

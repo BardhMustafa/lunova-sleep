@@ -1,7 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from "./env";
 
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const URL = SUPABASE_URL;
+const SERVICE_ROLE = SUPABASE_SERVICE_ROLE_KEY;
 
 /**
  * Privileged, server-only Supabase client using the service-role key.

@@ -1,10 +1,11 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./env";
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const URL = SUPABASE_URL;
+const ANON = SUPABASE_ANON_KEY;
 
 /**
  * Session-aware Supabase client for Server Components / Server Actions.
