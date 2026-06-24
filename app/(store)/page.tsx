@@ -58,7 +58,7 @@ export default async function HomePage() {
                 <img
                   src={hero.images[0]}
                   alt={hero.name}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain"
                 />
               </div>
               <div className="absolute -bottom-5 -left-5 hidden rounded-2xl bg-sand-50 px-5 py-4 shadow-soft sm:block">
