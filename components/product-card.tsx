@@ -14,13 +14,26 @@ export function ProductCard({ product }: { product: ProductView }) {
       className="group flex flex-col"
     >
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl2 bg-sand-200">
-        {image && (
+        {image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={image}
             alt={product.name}
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
           />
+        ) : (
+          // Fallback when the product has no image in the database — still
+          // on-brand, driven by the product's own colour.
+          <div
+            className="flex h-full w-full items-center justify-center transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+            style={{
+              background: `linear-gradient(135deg, ${product.colorHex}22, ${product.colorHex}66)`,
+            }}
+          >
+            <span className="font-serif text-2xl text-ink/40">
+              {product.name}
+            </span>
+          </div>
         )}
         <span className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-sand-50/85 px-3 py-1 text-xs text-ink-soft backdrop-blur">
           <span
